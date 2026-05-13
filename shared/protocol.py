@@ -12,8 +12,11 @@ class MessageType(str, Enum):
     MOVE_REQUEST = "MoveRequest"
     MOVE_ACCEPTED = "MoveAccepted"
     MOVE_REJECTED = "MoveRejected"
+    GAME_CREATED = "GameCreated"
     GAME_START = "GameStart"
     GAME_END = "GameEnd"
+    STATE = "State"
+    ERROR = "Error"
 
 
 @dataclass(frozen=True)
