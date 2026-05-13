@@ -10,7 +10,17 @@ def main() -> None:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", default=8765, type=int)
     parser.add_argument("--name", default="player")
+    parser.add_argument("--ui", choices=("console", "qt"), default="console")
     args = parser.parse_args()
+
+    if args.ui == "qt":
+        from client.qt_app import run_qt_client
+
+        try:
+            run_qt_client(host=args.host, port=args.port, name=args.name)
+        except RuntimeError as exc:
+            print(str(exc))
+        return
 
     client = LanChessClient(host=args.host, port=args.port, name=args.name)
     client.interactive_loop()

@@ -26,6 +26,33 @@ python3 scripts/run_client.py
 python3 scripts/run_server_local.py
 ```
 
+## Run the Qt visualization client
+
+Install Qt binding first (if not already installed):
+
+```bash
+python3 -m pip install PySide6
+```
+
+Start server:
+
+```bash
+python3 scripts/run_server_local.py
+```
+
+Start Qt client windows (one per player):
+
+```bash
+python3 scripts/run_client.py --ui qt --name white
+python3 scripts/run_client.py --ui qt --name black
+```
+
+How to play in Qt:
+- Click a piece, then click destination square.
+- Or drag a piece and release on destination square.
+- Use `Create Game` on one client and `Join Game` + game id on the other.
+- Piece graphics are loaded automatically from the `images/` directory when Qt mode starts.
+
 ## Run a local/LAN game
 
 Open three terminals:

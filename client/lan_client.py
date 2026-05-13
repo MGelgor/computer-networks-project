@@ -85,6 +85,15 @@ class LanChessClient:
             if envelope.type is message_type:
                 return envelope
 
+    def drain_messages(self) -> list[MessageEnvelope]:
+        messages = []
+        while True:
+            try:
+                messages.append(self.received.get_nowait())
+            except queue.Empty:
+                break
+        return messages
+
     def show(self) -> str:
         lines = [
             f"status: {self.status}",
