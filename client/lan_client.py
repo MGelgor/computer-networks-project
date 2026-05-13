@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import queue
+import re
 import socket
 import threading
 import time
@@ -8,6 +9,8 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from shared.protocol import MessageEnvelope, MessageType
+
+UCI_RE = re.compile(r"^[a-h][1-8][a-h][1-8][qrbn]?$")
 
 
 @dataclass
@@ -62,7 +65,8 @@ class LanChessClient:
     def move(self, uci: str) -> None:
         if self.game_id is None:
             raise RuntimeError("No active game. Create or join a game first.")
-        self.send(MessageEnvelope(type=MessageType.MOVE_REQUEST, payload={"game_id": self.game_id, "uci": uci}))
+        normalized = self._normalize_uci(uci)
+        self.send(MessageEnvelope(type=MessageType.MOVE_REQUEST, payload={"game_id": self.game_id, "uci": normalized}))
 
     def send(self, envelope: MessageEnvelope) -> None:
         if self.socket is None:
@@ -96,6 +100,7 @@ class LanChessClient:
     def interactive_loop(self) -> None:
         self.connect()
         print("Commands: create, join <game_id>, move <uci>, show, quit")
+        print("Tip: you can also type a move directly (example: e2e4)")
         try:
             while True:
                 command = input(f"{self.name}> ").strip()
@@ -110,14 +115,36 @@ class LanChessClient:
                     self.join_game(command.split(maxsplit=1)[1])
                     continue
                 if command.startswith("move "):
-                    self.move(command.split(maxsplit=1)[1])
+                    try:
+                        self.move(command)
+                    except ValueError as exc:
+                        print(str(exc))
                     continue
                 if command == "show":
                     self.show()
                     continue
+                if UCI_RE.match(command.lower()):
+                    try:
+                        self.move(command)
+                    except ValueError as exc:
+                        print(str(exc))
+                    continue
                 print("Unknown command")
         finally:
             self.close()
+
+    def _normalize_uci(self, text: str) -> str:
+        normalized = text.strip().lower()
+        if normalized.startswith("move "):
+            normalized = normalized.split(maxsplit=1)[1].strip().lower()
+        if UCI_RE.match(normalized):
+            return normalized
+
+        # Handle occasional terminal interleaving by scanning tokens for a valid UCI move.
+        for token in re.findall(r"[a-zA-Z0-9]+", normalized):
+            if UCI_RE.match(token):
+                return token
+        raise ValueError(f"Invalid move format: {text!r}. Use formats like e2e4 or move e2e4")
 
     def _listen_loop(self) -> None:
         if self.socket is None:
